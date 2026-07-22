@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-purple-500 selection:text-white min-h-screen overflow-x-hidden;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(236, 72, 153, 0.1) 0px, transparent 50%);
+  }
+}
+
+/* Custom Glassmorphism styles */
+.glass-card {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  background: rgba(30, 41, 59, 0.75);
+  border-color: rgba(168, 85, 247, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px -10px rgba(168, 85, 247, 0.25);
+}
+
+.glow-btn-purple {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+  transition: all 0.2s ease-in-out;
+}
+.glow-btn-purple:hover {
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.7);
+  transform: scale(1.02);
+}
+
+.glow-btn-gold {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+  transition: all 0.2s ease-in-out;
+}
+.glow-btn-gold:hover {
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.7);
+  transform: scale(1.02);
+}
+
+/* 3D Dice Styles */
+.dice-scene {
+  perspective: 1000px;
+}
+
+.dice-cube {
+  width: 120px;
+  height: 120px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dice-face {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border: 2px solid rgba(168, 85, 247, 0.4);
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.05), 0 0 15px rgba(168, 85, 247, 0.2);
+}
+
+.face-1 { transform: translateZ(60px); }
+.face-2 { transform: rotateY(180deg) translateZ(60px); }
+.face-3 { transform: rotateY(-90deg) translateZ(60px); }
+.face-4 { transform: rotateY(90deg) translateZ(60px); }
+.face-5 { transform: rotateX(-90deg) translateZ(60px); }
+.face-6 { transform: rotateX(90deg) translateZ(60px); }
+
+.pip {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ec4899, #8b5cf6);
+  box-shadow: 0 0 8px rgba(236, 72, 153, 0.8);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
