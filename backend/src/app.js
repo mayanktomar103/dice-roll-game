@@ -23,9 +23,40 @@ const app = express();
 
 // Middleware
 app.use(helmet());
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://dice-roll-game-jop5-iota.vercel.app'
+];
+
+if (process.env.CLIENT_URL) {
+  const normalizedClientUrl = process.env.CLIENT_URL.trim();
+  allowedOrigins.push(normalizedClientUrl);
+  if (normalizedClientUrl.endsWith('/')) {
+    allowedOrigins.push(normalizedClientUrl.slice(0, -1));
+  } else {
+    allowedOrigins.push(normalizedClientUrl + '/');
+  }
+}
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps, curl, or postman)
+      if (!origin) return callback(null, true);
+      
+      const isAllowed = allowedOrigins.some(allowed => {
+        // Strip trailing slash for matching comparison
+        const normAllowed = allowed.endsWith('/') ? allowed.slice(0, -1) : allowed;
+        const normOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin;
+        return normAllowed.toLowerCase() === normOrigin.toLowerCase();
+      });
+
+      if (isAllowed) {
+        return callback(null, true);
+      } else {
+        return callback(new Error('CORS Policy block: Origin not allowed'), false);
+      }
+    },
     credentials: true
   })
 );
