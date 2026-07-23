@@ -1,57 +1,69 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize, BaseModel } = require('../config/db');
 
-const transactionSchema = new mongoose.Schema(
-  {
-    transactionId: {
-      type: String,
-      required: true,
-      unique: true,
-      index: true
-    },
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true
-    },
-    type: {
-      type: String,
-      enum: [
-        'Deposit',
-        'Withdrawal',
-        'Game Bet',
-        'Game Win',
-        'VIP Purchase',
-        'Coin Pack Purchase'
-      ],
-      required: true
-    },
-    amount: {
-      type: Number,
-      required: true
-    },
-    balanceBefore: {
-      type: Number,
-      required: true
-    },
-    balanceAfter: {
-      type: Number,
-      required: true
-    },
-    status: {
-      type: String,
-      enum: ['completed', 'pending', 'failed'],
-      default: 'completed'
-    },
-    reference: {
-      type: String,
-      default: ''
+class Transaction extends BaseModel {
+  toJSON() {
+    const values = { ...this.get() };
+    values._id = values.id;
+    if (values.user && typeof values.user === 'object') {
+      // relation is loaded, keep as object
+    } else {
+      values.user = values.userId;
     }
-  },
-  {
-    timestamps: true
+    return values;
   }
-);
+}
 
-const Transaction = mongoose.model('Transaction', transactionSchema);
+Transaction.init({
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true
+  },
+  transactionId: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  type: {
+    type: DataTypes.ENUM(
+      'Deposit',
+      'Withdrawal',
+      'Game Bet',
+      'Game Win',
+      'VIP Purchase',
+      'Coin Pack Purchase'
+    ),
+    allowNull: false
+  },
+  amount: {
+    type: DataTypes.DOUBLE,
+    allowNull: false
+  },
+  balanceBefore: {
+    type: DataTypes.DOUBLE,
+    allowNull: false
+  },
+  balanceAfter: {
+    type: DataTypes.DOUBLE,
+    allowNull: false
+  },
+  status: {
+    type: DataTypes.ENUM('completed', 'pending', 'failed'),
+    defaultValue: 'completed'
+  },
+  reference: {
+    type: DataTypes.STRING,
+    defaultValue: ''
+  }
+}, {
+  sequelize,
+  modelName: 'Transaction',
+  tableName: 'transactions'
+});
+
 module.exports = Transaction;

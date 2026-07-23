@@ -1,49 +1,64 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize, BaseModel } = require('../config/db');
 
-const purchaseSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true
-    },
-    type: {
-      type: String,
-      enum: ['coin_pack', 'vip'],
-      required: true
-    },
-    packageName: {
-      type: String,
-      required: true
-    },
-    amount: {
-      type: Number,
-      required: true,
+class Purchase extends BaseModel {
+  toJSON() {
+    const values = { ...this.get() };
+    values._id = values.id;
+    if (values.user && typeof values.user === 'object') {
+      // relation is loaded, keep as object
+    } else {
+      values.user = values.userId;
+    }
+    return values;
+  }
+}
+
+Purchase.init({
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  type: {
+    type: DataTypes.ENUM('coin_pack', 'vip'),
+    allowNull: false
+  },
+  packageName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  amount: {
+    type: DataTypes.DOUBLE,
+    allowNull: false,
+    validate: {
       min: 0
-    },
-    coinsAdded: {
-      type: Number,
-      default: 0
-    },
-    paymentId: {
-      type: String,
-      required: true
-    },
-    paymentGateway: {
-      type: String,
-      default: 'mock'
-    },
-    status: {
-      type: String,
-      enum: ['completed', 'pending', 'failed'],
-      default: 'completed'
     }
   },
-  {
-    timestamps: true
+  coinsAdded: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  paymentId: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  paymentGateway: {
+    type: DataTypes.STRING,
+    defaultValue: 'mock'
+  },
+  status: {
+    type: DataTypes.ENUM('completed', 'pending', 'failed'),
+    defaultValue: 'completed'
   }
-);
+}, {
+  sequelize,
+  modelName: 'Purchase',
+  tableName: 'purchases'
+});
 
-const Purchase = mongoose.model('Purchase', purchaseSchema);
 module.exports = Purchase;

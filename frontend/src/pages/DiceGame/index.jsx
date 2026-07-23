@@ -6,12 +6,44 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CurrencyDollarIcon, SparklesIcon, TrophyIcon, ArrowPathIcon } from '@heroicons/react/24/solid';
 
+const QUESTIONS = [
+  { q: '1 + 1 = ?', options: ['2', '4', '3', '5'], correct: 0 },
+  { q: '5 + 3 = ?', options: ['7', '8', '9', '6'], correct: 1 },
+  { q: '10 - 4 = ?', options: ['5', '6', '7', '8'], correct: 1 },
+  { q: '3 * 2 = ?', options: ['5', '6', '8', '9'], correct: 1 },
+  { q: '4 + 5 = ?', options: ['8', '9', '10', '7'], correct: 1 },
+  { q: '12 - 7 = ?', options: ['4', '5', '6', '3'], correct: 1 },
+  { q: '2 * 4 = ?', options: ['6', '8', '10', '12'], correct: 1 },
+  { q: '8 + 2 = ?', options: ['9', '10', '11', '12'], correct: 1 }
+];
+
 const DiceGame = () => {
   const { user, updateUserState } = useAuth();
   const [bet, setBet] = useState(50);
   const [isRolling, setIsRolling] = useState(false);
+  const [isDiceRolling, setIsDiceRolling] = useState(false);
   const [currentDice, setCurrentDice] = useState(1);
   const [lastResult, setLastResult] = useState(null);
+  const [rollCount, setRollCount] = useState(0);
+
+  // Quiz States
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizQuestion, setQuizQuestion] = useState(null);
+  const [timer, setTimer] = useState(10);
+
+  // Quiz Timer Countdown Effect
+  React.useEffect(() => {
+    let interval = null;
+    if (showQuiz && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (showQuiz && timer === 0) {
+      setShowQuiz(false);
+      toast.error('Time is up! Dice roll authorization denied.');
+    }
+    return () => clearInterval(interval);
+  }, [showQuiz, timer]);
 
   const handleQuickBet = (action) => {
     const userCoins = user?.coins || 0;
@@ -21,7 +53,7 @@ const DiceGame = () => {
     else if (action === 'max') setBet(userCoins);
   };
 
-  const handleRoll = async () => {
+  const handleRoll = () => {
     if (isRolling) return;
 
     if (!bet || bet <= 0) {
@@ -34,7 +66,26 @@ const DiceGame = () => {
       return;
     }
 
+    // Trigger Trivia Quiz
+    const randomIndex = Math.floor(Math.random() * QUESTIONS.length);
+    setQuizQuestion(QUESTIONS[randomIndex]);
+    setTimer(10);
+    setShowQuiz(true);
+  };
+
+  const handleAnswer = (selectedIdx) => {
+    setShowQuiz(false);
+    if (selectedIdx === quizQuestion.correct) {
+      toast.success('Correct answer! Authorizing roll...');
+      executeRoll();
+    } else {
+      toast.error('Wrong answer! Dice roll authorization denied.');
+    }
+  };
+
+  const executeRoll = async () => {
     setIsRolling(true);
+    setIsDiceRolling(false);
     setLastResult(null);
 
     try {
@@ -43,11 +94,18 @@ const DiceGame = () => {
       if (response.success && response.data) {
         const { game, user: updatedUser } = response.data;
 
-        // Trigger 3D dice rolling animation time (1.6 seconds)
+        // Set the final target dice face
+        setCurrentDice(game.dice);
+        setRollCount((prev) => prev + 1);
+        
+        // Start the smooth 3D rolling rotation now that the end-state is known
+        setIsDiceRolling(true);
+
+        // Trigger 3D dice rolling animation time (3 seconds)
         setTimeout(() => {
-          setCurrentDice(game.dice);
           setLastResult(game);
           setIsRolling(false);
+          setIsDiceRolling(false);
 
           // Update Auth user state
           updateUserState({
@@ -67,10 +125,11 @@ const DiceGame = () => {
           } else {
             toast.error(`❌ Lost ${game.bet} Coins. Rolled ${game.dice} (+10 XP)`);
           }
-        }, 1600);
+        }, 3000);
       }
     } catch (err) {
       setIsRolling(false);
+      setIsDiceRolling(false);
       toast.error(err.response?.data?.message || 'Error executing dice roll');
     }
   };
@@ -109,7 +168,7 @@ const DiceGame = () => {
 
         {/* 3D Dice Display */}
         <div className="py-4">
-          <Dice3D value={currentDice} isRolling={isRolling} />
+          <Dice3D value={currentDice} isRolling={isDiceRolling} rollCount={rollCount} />
         </div>
 
         {/* Result Payout Highlight Card */}
@@ -221,7 +280,7 @@ const DiceGame = () => {
         </div>
         <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400">
           <span className="font-bold text-blue-400 block text-sm">Dice 5</span>
-          <span>2x Payout</span>
+          <span>1.5x Payout</span>
         </div>
         <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400">
           <span className="font-bold text-amber-400 block text-sm">Dice 4</span>
@@ -232,6 +291,65 @@ const DiceGame = () => {
           <span>Lose Bet</span>
         </div>
       </div>
+      {/* Quiz Modal Overlay */}
+      <AnimatePresence>
+        {showQuiz && quizQuestion && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md px-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="glass-card rounded-3xl p-8 max-w-md w-full border-2 border-purple-500/40 shadow-2xl relative overflow-hidden space-y-6 text-center animate-fade-in"
+            >
+              {/* Top Banner decoration */}
+              <div className="flex items-center justify-center space-x-2 text-purple-400 font-extrabold uppercase text-xs tracking-wider">
+                <SparklesIcon className="w-5 h-5 text-purple-400" />
+                <span>Skill Verification (Trivia)</span>
+              </div>
+
+              {/* Timer */}
+              <div className="space-y-1">
+                <div className={`text-4xl font-black ${timer <= 3 ? 'text-rose-500 animate-pulse' : 'text-amber-400'}`}>
+                  {timer}s
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-widest font-bold">Remaining Time</div>
+              </div>
+
+              {/* Question text */}
+              <div className="space-y-3">
+                <h3 className="text-3xl font-black text-white">{quizQuestion.q}</h3>
+                <p className="text-slate-400 text-xs leading-relaxed">
+                  Answer correctly within 10 seconds to authorize your dice roll.
+                </p>
+              </div>
+
+              {/* Options */}
+              <div className="grid grid-cols-2 gap-4">
+                {quizQuestion.options.map((option, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleAnswer(idx)}
+                    className="p-4 rounded-2xl bg-slate-900 hover:bg-purple-600/20 border border-slate-800 hover:border-purple-500/40 text-white font-extrabold text-lg transition duration-200"
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+
+              {/* Cancel Bet Action */}
+              <button
+                onClick={() => {
+                  setShowQuiz(false);
+                  toast.error('Dice roll canceled.');
+                }}
+                className="w-full text-slate-400 hover:text-white text-xs font-bold uppercase transition"
+              >
+                Cancel Bet
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,66 +1,78 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize, BaseModel } = require('../config/db');
 
-const paymentSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true
-    },
-    orderId: {
-      type: String,
-      required: true,
-      unique: true,
-      index: true
-    },
-    paymentId: {
-      type: String,
-      default: ''
-    },
-    signature: {
-      type: String,
-      default: ''
-    },
-    gateway: {
-      type: String,
-      default: 'razorpay'
-    },
-    type: {
-      type: String,
-      enum: ['vip', 'coin_pack'],
-      required: true
-    },
-    packageName: {
-      type: String,
-      default: ''
-    },
-    coinsAdded: {
-      type: Number,
-      default: 0
-    },
-    amount: {
-      type: Number,
-      required: true
-    },
-    currency: {
-      type: String,
-      default: 'INR'
-    },
-    status: {
-      type: String,
-      enum: ['created', 'completed', 'failed'],
-      default: 'created'
-    },
-    metadata: {
-      type: mongoose.Schema.Types.Mixed,
-      default: {}
+class Payment extends BaseModel {
+  toJSON() {
+    const values = { ...this.get() };
+    values._id = values.id;
+    if (values.user && typeof values.user === 'object') {
+      // relation is loaded, keep as object
+    } else {
+      values.user = values.userId;
     }
-  },
-  {
-    timestamps: true
+    return values;
   }
-);
+}
 
-const Payment = mongoose.model('Payment', paymentSchema);
+Payment.init({
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  orderId: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
+  paymentId: {
+    type: DataTypes.STRING,
+    defaultValue: ''
+  },
+  signature: {
+    type: DataTypes.STRING,
+    defaultValue: ''
+  },
+  gateway: {
+    type: DataTypes.STRING,
+    defaultValue: 'razorpay'
+  },
+  type: {
+    type: DataTypes.ENUM('vip', 'coin_pack'),
+    allowNull: false
+  },
+  packageName: {
+    type: DataTypes.STRING,
+    defaultValue: ''
+  },
+  coinsAdded: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  amount: {
+    type: DataTypes.DOUBLE,
+    allowNull: false
+  },
+  currency: {
+    type: DataTypes.STRING,
+    defaultValue: 'INR'
+  },
+  status: {
+    type: DataTypes.ENUM('created', 'completed', 'failed'),
+    defaultValue: 'created'
+  },
+  metadata: {
+    type: DataTypes.JSON,
+    defaultValue: {}
+  }
+}, {
+  sequelize,
+  modelName: 'Payment',
+  tableName: 'payments'
+});
+
 module.exports = Payment;

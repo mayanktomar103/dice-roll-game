@@ -15,7 +15,7 @@ class LedgerService {
 
     const transaction = await Transaction.create({
       transactionId,
-      user,
+      userId: user,
       type,
       amount,
       balanceBefore,

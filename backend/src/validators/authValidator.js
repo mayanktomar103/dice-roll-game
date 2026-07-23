@@ -23,14 +23,14 @@ const registerValidation = validate([
     .trim()
     .isLength({ min: 3, max: 20 })
     .withMessage('Username must be between 3 and 20 characters'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('email').trim().isEmail().withMessage('Valid email is required'),
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long')
 ]);
 
 const loginValidation = validate([
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('email').trim().isEmail().withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required')
 ]);
 

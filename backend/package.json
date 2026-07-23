@@ -22,9 +22,10 @@
     "express-validator": "^7.2.1",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.9.5",
     "morgan": "^1.10.0",
-    "razorpay": "^2.9.8"
+    "mysql2": "^3.23.1",
+    "razorpay": "^2.9.8",
+    "sequelize": "^6.37.8"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

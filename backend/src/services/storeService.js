@@ -4,7 +4,10 @@ const User = require('../models/User');
 
 class StoreService {
   static async getCoinPacks() {
-    let packs = await CoinPackage.find({ active: true }).sort({ price: 1 });
+    let packs = await CoinPackage.findAll({
+      where: { active: true },
+      order: [['price', 'ASC']]
+    });
 
     if (packs.length === 0) {
       // Return default packs if DB isn't seeded yet
@@ -28,7 +31,7 @@ class StoreService {
     let packName = name || 'Coin Pack';
     let packPrice = price || 99;
 
-    if (packId && packId.length === 24) {
+    if (packId) {
       const pack = await CoinPackage.findById(packId);
       if (pack) {
         coinsToAdd = pack.coins;
@@ -45,7 +48,7 @@ class StoreService {
 
     // Record purchase
     const purchase = await Purchase.create({
-      user: userId,
+      userId,
       type: 'coin_pack',
       packageName: packName,
       amount: packPrice,
