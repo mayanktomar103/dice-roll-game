@@ -1,35 +1,50 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize, BaseModel } = require('../config/db');
 
-const coinPackageSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    coins: {
-      type: Number,
-      required: true,
+class CoinPackage extends BaseModel {
+  toJSON() {
+    const values = { ...this.get() };
+    values._id = values.id;
+    return values;
+  }
+}
+
+CoinPackage.init({
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true
+  },
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  coins: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
       min: 1
-    },
-    price: {
-      type: Number,
-      required: true,
-      min: 0
-    },
-    badge: {
-      type: String,
-      default: ''
-    },
-    active: {
-      type: Boolean,
-      default: true
     }
   },
-  {
-    timestamps: true
+  price: {
+    type: DataTypes.DOUBLE,
+    allowNull: false,
+    validate: {
+      min: 0
+    }
+  },
+  badge: {
+    type: DataTypes.STRING,
+    defaultValue: ''
+  },
+  active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
-);
+}, {
+  sequelize,
+  modelName: 'CoinPackage',
+  tableName: 'coin_packages'
+});
 
-const CoinPackage = mongoose.model('CoinPackage', coinPackageSchema);
 module.exports = CoinPackage;

@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const Purchase = require('../models/Purchase');
 const GameHistory = require('../models/GameHistory');
+const { sequelize } = require('../config/db');
+const { Op } = require('sequelize');
 
 class AdminService {
   static async getDashboardStats() {
@@ -12,30 +14,34 @@ class AdminService {
       totalPurchases,
       gameStatsResult
     ] = await Promise.all([
-      User.countDocuments(),
-      User.countDocuments({ vip: true }),
-      User.find().sort({ createdAt: -1 }).limit(5).select('-password'),
-      Purchase.aggregate([
-        { $match: { status: 'completed' } },
-        { $group: { _id: null, totalRevenue: { $sum: '$amount' } } }
-      ]),
-      Purchase.countDocuments({ status: 'completed' }),
-      GameHistory.aggregate([
-        {
-          $group: {
-            _id: null,
-            totalGamesPlayed: { $sum: 1 },
-            totalBetCoins: { $sum: '$bet' },
-            totalPayoutCoins: { $sum: '$reward' },
-            avgBet: { $avg: '$bet' }
-          }
-        }
-      ])
+      User.count(),
+      User.count({ where: { vip: true } }),
+      User.findAll({
+        order: [['createdAt', 'DESC']],
+        limit: 5,
+        attributes: { exclude: ['password'] }
+      }),
+      Purchase.sum('amount', { where: { status: 'completed' } }),
+      Purchase.count({ where: { status: 'completed' } }),
+      GameHistory.findAll({
+        attributes: [
+          [sequelize.fn('COUNT', sequelize.col('id')), 'totalGamesPlayed'],
+          [sequelize.fn('SUM', sequelize.col('bet')), 'totalBetCoins'],
+          [sequelize.fn('SUM', sequelize.col('reward')), 'totalPayoutCoins'],
+          [sequelize.fn('AVG', sequelize.col('bet')), 'avgBet']
+        ]
+      })
     ]);
 
-    const revenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
-    const gameStats = gameStatsResult.length > 0
-      ? gameStatsResult[0]
+    const revenue = revenueResult || 0;
+    const rawGameStats = gameStatsResult.length > 0 ? gameStatsResult[0].get() : null;
+    const gameStats = rawGameStats
+      ? {
+          totalGamesPlayed: parseInt(rawGameStats.totalGamesPlayed || 0),
+          totalBetCoins: parseInt(rawGameStats.totalBetCoins || 0),
+          totalPayoutCoins: parseInt(rawGameStats.totalPayoutCoins || 0),
+          avgBet: parseFloat(rawGameStats.avgBet || 0)
+        }
       : { totalGamesPlayed: 0, totalBetCoins: 0, totalPayoutCoins: 0, avgBet: 0 };
 
     return {
@@ -56,11 +62,11 @@ class AdminService {
   }
 
   static async getUsersList({ page = 1, limit = 10, search }) {
-    const query = {};
+    const where = {};
     if (search) {
-      query.$or = [
-        { username: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+      where[Op.or] = [
+        { username: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } }
       ];
     }
 
@@ -69,8 +75,14 @@ class AdminService {
     const skip = (pageNum - 1) * limitNum;
 
     const [users, total] = await Promise.all([
-      User.find(query).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limitNum),
-      User.countDocuments(query)
+      User.findAll({
+        where,
+        attributes: { exclude: ['password'] },
+        order: [['createdAt', 'DESC']],
+        offset: skip,
+        limit: limitNum
+      }),
+      User.count({ where })
     ]);
 
     return {
@@ -90,12 +102,17 @@ class AdminService {
     const skip = (pageNum - 1) * limitNum;
 
     const [purchases, total] = await Promise.all([
-      Purchase.find()
-        .populate('user', 'username email')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNum),
-      Purchase.countDocuments()
+      Purchase.findAll({
+        include: [{
+          model: User,
+          as: 'user',
+          attributes: ['username', 'email']
+        }],
+        order: [['createdAt', 'DESC']],
+        offset: skip,
+        limit: limitNum
+      }),
+      Purchase.count()
     ]);
 
     return {

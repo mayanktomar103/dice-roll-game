@@ -121,7 +121,7 @@ const Home = () => {
             </div>
             <h3 className="text-xl font-bold text-white">Multiplied Payouts</h3>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Roll a 6 to win 3x your bet. Roll a 5 to win 2x. Roll 4 to get your bet back. High risk, higher virtual rewards!
+              Roll a 6 to win 3x your bet. Roll a 5 to win 1.5x. Roll 4 to get your bet back. High risk, higher virtual rewards!
             </p>
           </div>
 
@@ -160,7 +160,7 @@ const Home = () => {
             </div>
             <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-center">
               <div className="text-2xl font-black text-blue-400">Dice 5</div>
-              <div className="text-xs text-slate-300 font-bold mt-1">WIN 2X BET</div>
+              <div className="text-xs text-slate-300 font-bold mt-1">WIN 1.5X BET</div>
             </div>
             <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center">
               <div className="text-2xl font-black text-amber-400">Dice 4</div>

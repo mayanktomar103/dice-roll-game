@@ -1,9 +1,10 @@
-const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+dotenv.config();
+
+const connectDB = require('../config/db');
+const sequelize = connectDB.sequelize;
 const CoinPackage = require('../models/CoinPackage');
 const User = require('../models/User');
-
-dotenv.config();
 
 const seedPacks = [
   {
@@ -31,17 +32,17 @@ const seedPacks = [
 
 const seedDatabase = async () => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/diceroll';
-    await mongoose.connect(mongoUri);
-    console.log('[Seed] Connected to MongoDB');
+    // Connect to database and sync tables
+    await connectDB();
+    console.log('[Seed] Connected and synced MySQL tables.');
 
     // Seed coin packages
-    await CoinPackage.deleteMany({});
-    await CoinPackage.insertMany(seedPacks);
+    await CoinPackage.destroy({ where: {}, force: true });
+    await CoinPackage.bulkCreate(seedPacks);
     console.log('[Seed] Coin packages seeded successfully!');
 
     // Seed optional admin user if none exists
-    const adminExists = await User.findOne({ role: 'admin' });
+    const adminExists = await User.findOne({ where: { role: 'admin' } });
     if (!adminExists) {
       await User.create({
         username: 'admin',
@@ -56,7 +57,8 @@ const seedDatabase = async () => {
       console.log('[Seed] Admin user created: admin@diceroll.com / adminpassword123');
     }
 
-    mongoose.connection.close();
+    await sequelize.close();
+    console.log('[Seed] Connection closed.');
     process.exit(0);
   } catch (error) {
     console.error('[Seed Error]', error);

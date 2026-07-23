@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const Dice3D = ({ value = 1, isRolling = false }) => {
+const Dice3D = ({ value = 1, isRolling = false, rollCount = 0 }) => {
   // Preset rotation transforms for 3D faces (1 to 6)
   const faceRotations = {
     1: { rotateX: 0, rotateY: 0 },
@@ -14,27 +14,23 @@ const Dice3D = ({ value = 1, isRolling = false }) => {
 
   const targetRotation = faceRotations[value] || faceRotations[1];
 
+  // Accumulate rotation so it continues from its last landing position
+  const rotateX = rollCount * 1800 + targetRotation.rotateX;
+  const rotateY = rollCount * 1800 + targetRotation.rotateY;
+
   return (
     <div className="dice-scene flex items-center justify-center p-8">
       <motion.div
         className="dice-cube"
-        animate={
-          isRolling
-            ? {
-                rotateX: [0, 720, 1440, 1800 + targetRotation.rotateX],
-                rotateY: [0, 1080, 2160, 2520 + targetRotation.rotateY],
-                scale: [1, 1.25, 0.9, 1]
-              }
-            : {
-                rotateX: targetRotation.rotateX,
-                rotateY: targetRotation.rotateY
-              }
-        }
-        transition={
-          isRolling
-            ? { duration: 1.6, ease: [0.25, 1, 0.5, 1] }
-            : { duration: 0.5 }
-        }
+        animate={{
+          rotateX,
+          rotateY,
+          scale: isRolling ? [1, 1.25, 0.9, 1] : 1
+        }}
+        transition={{
+          duration: isRolling ? 3 : 0.5,
+          ease: isRolling ? [0.25, 1, 0.5, 1] : 'easeOut'
+        }}
       >
         {/* Face 1 */}
         <div className="dice-face face-1">

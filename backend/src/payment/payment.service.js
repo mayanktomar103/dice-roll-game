@@ -25,7 +25,7 @@ class PaymentService {
     });
 
     const payment = await Payment.create({
-      user: userId,
+      userId,
       orderId: razorpayOrder.id,
       gateway: 'razorpay',
       type,
@@ -41,7 +41,7 @@ class PaymentService {
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
       keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder_key',
-      paymentId: payment._id
+      paymentId: payment.id
     };
   }
 
@@ -138,11 +138,13 @@ class PaymentService {
     const skip = (pageNum - 1) * limitNum;
 
     const [payments, total] = await Promise.all([
-      Payment.find({ user: userId })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNum),
-      Payment.countDocuments({ user: userId })
+      Payment.findAll({
+        where: { userId },
+        order: [['createdAt', 'DESC']],
+        offset: skip,
+        limit: limitNum
+      }),
+      Payment.count({ where: { userId } })
     ]);
 
     return {
@@ -157,7 +159,10 @@ class PaymentService {
   }
 
   static async getPackages() {
-    let packs = await CoinPackage.find({ active: true }).sort({ price: 1 });
+    let packs = await CoinPackage.findAll({
+      where: { active: true },
+      order: [['price', 'ASC']]
+    });
     if (packs.length === 0) {
       packs = [
         { name: 'Starter Pack', coins: 5000, price: 99, badge: 'Popular' },

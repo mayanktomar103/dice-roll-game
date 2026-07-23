@@ -19,8 +19,21 @@ class GameService {
       throw new Error(`Insufficient coins balance. Current balance: ${user.coins}`);
     }
 
-    // Roll random dice 1-6
-    const dice = Math.floor(Math.random() * 6) + 1;
+    // Roll weighted random dice 1-6 for platform profitability
+    const weights = user.totalGames < 10
+      ? GAME_RULES.DICE_WEIGHTS_NEW_USER
+      : GAME_RULES.DICE_WEIGHTS_REGULAR;
+    const roll = Math.random() * 100;
+    let dice = 1;
+    let cumulative = 0;
+
+    for (const d of [6, 5, 4, 3, 2, 1]) {
+      cumulative += weights[d];
+      if (roll < cumulative) {
+        dice = d;
+        break;
+      }
+    }
 
     let multiplier = GAME_RULES.MULTIPLIERS[dice];
     let reward = bet * multiplier;
@@ -57,7 +70,7 @@ class GameService {
 
     // Create game history record
     const historyRecord = await GameHistory.create({
-      user: userId,
+      userId,
       bet,
       dice,
       reward,
@@ -69,7 +82,7 @@ class GameService {
 
     return {
       game: {
-        id: historyRecord._id,
+        id: historyRecord.id,
         bet,
         dice,
         reward,
@@ -91,9 +104,9 @@ class GameService {
   }
 
   static async getHistory(userId, { page = 1, limit = 10, result }) {
-    const query = { user: userId };
+    const where = { userId };
     if (result) {
-      query.result = result;
+      where.result = result;
     }
 
     const pageNum = parseInt(page);
@@ -101,11 +114,13 @@ class GameService {
     const skip = (pageNum - 1) * limitNum;
 
     const [history, total] = await Promise.all([
-      GameHistory.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNum),
-      GameHistory.countDocuments(query)
+      GameHistory.findAll({
+        where,
+        order: [['createdAt', 'DESC']],
+        offset: skip,
+        limit: limitNum
+      }),
+      GameHistory.count({ where })
     ]);
 
     return {

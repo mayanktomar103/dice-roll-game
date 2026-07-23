@@ -1,11 +1,12 @@
 const User = require('../models/User');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
 const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
 
 class AuthService {
   static async registerUser({ username, email, password }) {
     const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
+      [Op.or]: [{ email }, { username }]
     });
 
     if (existingUser) {
@@ -49,7 +50,7 @@ class AuthService {
   }
 
   static async loginUser({ email, password }) {
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.scope('withPassword').findOne({ where: { email } });
     if (!user) {
       throw new Error('Invalid email or password');
     }
@@ -97,7 +98,7 @@ class AuthService {
       process.env.JWT_REFRESH_SECRET || 'supersecret_diceroll_refresh_key_2026'
     );
 
-    const user = await User.findById(decoded.id).select('+refreshToken');
+    const user = await User.scope('withRefreshToken').findByPk(decoded.id);
     if (!user || user.refreshToken !== token) {
       throw new Error('Invalid or expired refresh token');
     }
@@ -131,8 +132,10 @@ class AuthService {
 
     if (filteredUpdates.username) {
       const existing = await User.findOne({
-        username: filteredUpdates.username,
-        _id: { $ne: userId }
+        where: {
+          username: filteredUpdates.username,
+          id: { [Op.ne]: userId }
+        }
       });
       if (existing) {
         throw new Error('Username is already taken');

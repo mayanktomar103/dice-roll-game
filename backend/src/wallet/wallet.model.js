@@ -1,29 +1,48 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize, BaseModel } = require('../config/db');
 
-const walletSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      unique: true,
-      index: true
-    },
-    balance: {
-      type: Number,
-      default: 0,
-      min: 0
-    },
-    lockedBalance: {
-      type: Number,
-      default: 0,
+class Wallet extends BaseModel {
+  toJSON() {
+    const values = { ...this.get() };
+    values._id = values.id;
+    if (values.user && typeof values.user === 'object') {
+      // relation is loaded, keep as object
+    } else {
+      values.user = values.userId;
+    }
+    return values;
+  }
+}
+
+Wallet.init({
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    unique: true
+  },
+  balance: {
+    type: DataTypes.DOUBLE,
+    defaultValue: 0,
+    validate: {
       min: 0
     }
   },
-  {
-    timestamps: true
+  lockedBalance: {
+    type: DataTypes.DOUBLE,
+    defaultValue: 0,
+    validate: {
+      min: 0
+    }
   }
-);
+}, {
+  sequelize,
+  modelName: 'Wallet',
+  tableName: 'wallets'
+});
 
-const Wallet = mongoose.model('Wallet', walletSchema);
 module.exports = Wallet;

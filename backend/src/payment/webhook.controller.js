@@ -37,7 +37,7 @@ class WebhookController {
           payment.paymentId = paymentId;
           await payment.save();
 
-          const user = await User.findById(payment.user);
+          const user = await User.findById(payment.userId);
           if (user) {
             const initialCoins = user.coins;
 
@@ -48,7 +48,7 @@ class WebhookController {
               await user.save();
 
               await LedgerService.recordTransaction({
-                user: user._id,
+                user: user.id,
                 type: 'VIP Purchase',
                 amount: payment.amount,
                 balanceBefore: initialCoins,
@@ -63,7 +63,7 @@ class WebhookController {
               await user.save();
 
               await LedgerService.recordTransaction({
-                user: user._id,
+                user: user.id,
                 type: 'Coin Pack Purchase',
                 amount: payment.amount,
                 balanceBefore: initialCoins,

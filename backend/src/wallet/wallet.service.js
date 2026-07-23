@@ -19,9 +19,9 @@ class WalletService {
   }
 
   static async getTransactions(userId, { page = 1, limit = 10, type }) {
-    const query = { user: userId };
+    const where = { userId };
     if (type) {
-      query.type = type;
+      where.type = type;
     }
 
     const pageNum = parseInt(page);
@@ -29,11 +29,13 @@ class WalletService {
     const skip = (pageNum - 1) * limitNum;
 
     const [transactions, total] = await Promise.all([
-      Transaction.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNum),
-      Transaction.countDocuments(query)
+      Transaction.findAll({
+        where,
+        order: [['createdAt', 'DESC']],
+        offset: skip,
+        limit: limitNum
+      }),
+      Transaction.count({ where })
     ]);
 
     return {
@@ -53,7 +55,7 @@ class WalletService {
       throw new Error('User not found');
     }
 
-    const totalTransactions = await Transaction.countDocuments({ user: userId });
+    const totalTransactions = await Transaction.count({ where: { userId } });
 
     return {
       user: {
